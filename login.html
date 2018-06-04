@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script
+            src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+            crossorigin="anonymous"></script>
+</head>
+
+<style>
+
+    a {
+        border-bottom: 1px dashed #000;
+        cursor:pointer;
+    }
+    body {
+        color: #8a0000;
+    }
+    td {
+        padding: 5px 10px;
+    }
+    .left-menu {
+        width:10%;
+        vertical-align: top;
+        display: inline-block;
+        padding: 10px 20px;
+        box-shadow: 0 0 5px #d2d2d2;
+        background-color: #f3f3f3;
+    }
+    .content{
+        width: 70%;
+        display: inline-block;
+        padding: 10px 20px;
+        box-shadow: 0 0 5px #d2d2d2;
+        background-color: #f3f3f3;
+    }
+
+    .modal {
+        background-color: #fff;
+        box-shadow: 0 0 10px #9c9c9c;
+        position: fixed;
+        left: 50%;
+        transform: translate(-50%, 0);
+        z-index: 1000;
+        top: 20%;
+        padding: 20px 50px;
+    }
+
+    input {
+        padding: 5px 10px;
+        margin: 5px 10px;
+        border: 1px solid #dadada;
+    }
+    textarea {
+        padding: 5px 10px;
+        margin: 5px 10px;
+        border: 1px solid #dadada;
+    }
+
+    button {
+        padding: 10px 20px;
+        cursor: pointer;
+        border: none;
+        margin: 0px 10px;
+    }
+</style>
+
+
+<body>
+
+<div id="add_page" class="modal">
+
+    <div>
+        <div>
+            <span class="error"></span>
+        </div>
+        <form id="login_form">
+            <input type="hidden" name="id"/>
+            <div>
+                <input type="text" name="login" placeholder="Login (admin)"/>
+            </div>
+            <div>
+                <input type="password" name="password" placeholder="Пароль (admin)"/>
+            </div>
+        </form>
+        <div>
+            <button id="login_button">Войти</button>
+        </div>
+    </div>
+</div>
+</body>
+
+
+
+<script>
+
+
+
+    $(document).ready(function() {
+
+        $('#login_button').click(function() {
+            var data = {
+                login: $('#login_form').find('input[name="login"]').val(),
+                password: $('#login_form').find('input[name="password"]').val()
+            };
+            var type = 'POST';
+            $.ajax({
+                    url: '/api/AuthController',
+                    data:JSON.stringify(data),
+                    type: type,
+                    dataType: 'json',
+                    success: function (response) {
+                        console.log(response.data.rows);
+                        localStorage.setItem("auth_token",response.data.rows);
+                        location.href = '/index.html';
+                    },
+                    error: function (error) {
+                        $('.error').html(error.responseJSON.message);
+                    }
+                }
+            );
+
+        });
+
+
+    });
+</script>
+
+
+
+
+</html>

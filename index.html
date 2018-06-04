@@ -1,0 +1,244 @@
+<!doctype html>
+
+<html lang="en">
+
+
+<style>
+
+    a {
+        border-bottom: 1px dashed #000;
+        cursor:pointer;
+    }
+    body {
+        color: #8a0000;
+    }
+    td {
+        padding: 5px 10px;
+    }
+    .left-menu {
+        width:10%;
+        vertical-align: top;
+        display: inline-block;
+        padding: 10px 20px;
+        box-shadow: 0 0 5px #d2d2d2;
+        background-color: #f3f3f3;
+    }
+    .content{
+        width: 70%;
+        display: inline-block;
+        padding: 10px 20px;
+        box-shadow: 0 0 5px #d2d2d2;
+        background-color: #f3f3f3;
+    }
+
+    .modal {
+        display: none;
+        background-color: #fff;
+        box-shadow: 0 0 10px #9c9c9c;
+        position: fixed;
+        left: 50%;
+        transform: translate(-50%, 0);
+        z-index: 1000;
+        top: 20%;
+        padding: 20px 50px;
+    }
+
+    input {
+        padding: 5px 10px;
+        margin: 5px 10px;
+        border: 1px solid #dadada;
+    }
+    textarea {
+        padding: 5px 10px;
+        margin: 5px 10px;
+        border: 1px solid #dadada;
+    }
+
+    button {
+        padding: 10px 20px;
+        cursor: pointer;
+        border: none;
+        margin: 0px 10px;
+    }
+</style>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+
+    <!-- Page Title Here -->
+    <title>Pages</title>
+    <script
+            src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+            crossorigin="anonymous"></script>
+</head>
+<body>
+<div>
+    <div class="left-menu">
+        <ul>
+            <li><a nohref="nohref" id="logout">Выход</a></li>
+        </ul>
+    </div>
+    <div class="content">
+        <table id="pages">
+            <tr>
+                <th>#</th>
+                <th>Заголовок</th>
+                <th>Дата создания</th>
+                <th>Дата редактирования</th>
+                <th>Подробнее</th>
+                <th>Удалить</th>
+            </tr>
+            <tbody></tbody>
+        </table>
+        <button id="new_page_button">Добавить</button>
+    </div>
+</div>
+
+<div id="add_page" class="modal">
+    <div>
+        <form id="add_page_form">
+            <input type="hidden" name="id"/>
+            <div>
+                <input type="text" name="head" placeholder="Заголовок"/>
+            </div>
+            <div>
+                <input type="text" name="title" placeholder="Описание"/>
+            </div>
+            <div>
+                <textarea type="text" name="body" placeholder="Краткое содержание"></textarea>
+            </div>
+            <div>
+                <textarea type="text" name="ext_body" placeholder="Полное содержание"></textarea>
+            </div>
+
+        </form>
+        <div>
+            <button id="save_page_button">Сохранить</button>
+            <button id="cancel_button">Отмена</button>
+        </div>
+    </div>
+</div>
+</body>
+
+<script>
+
+
+    function showPage(id) {
+        $.ajax({
+            url: '/api/PageController?id='+id,
+            headers: {"auth_token": localStorage.getItem("auth_token")},
+            dataType: 'json',
+            success: function (response) {
+                    $('#add_page_form').find('[name="id"]').val(response.data.rows[0].id);
+                    $('#add_page_form').find('input[name="head"]').val(response.data.rows[0].head);
+                    $('#add_page_form').find('input[name="title"]').val(response.data.rows[0].title);
+                    $('#add_page_form').find('[name="body"]').val(response.data.rows[0].body);
+                    $('#add_page_form').find('[name="ext_body"]').val(response.data.rows[0].ext_body);
+            },
+            error: function (error) {
+                if (error.status == 401)
+                    location.href = '/login.html';
+            }
+        });
+    }
+    function deletePage(id) {
+        $.ajax({
+            url: '/api/PageController?id='+id,
+            headers: {"auth_token": localStorage.getItem("auth_token")},
+            type:'DELETE',
+            success: function (response) {
+                alert('Успешно!');
+                refreshTable();
+            },
+            error: function (error) {
+                if (error.status == 401)
+                    location.href = '/login.html';
+            }
+        });
+    }
+    function refreshTable(){
+        $.ajax({
+                url: '/api/PageController',
+                headers: {"auth_token": localStorage.getItem("auth_token")},
+                success: function (response) {
+                    $('#pages > tbody:last-child').html('');
+                    response.data.rows.forEach(function(item) {
+                        $('#pages > tbody:last-child').append(
+                            '<tr>'
+                            +'<td>'+item.id+'</td>'
+                            +'<td>'+item.title+'</td>'
+                            +'<td>'+item.date_create+'</td>'
+                            +'<td>'+item.date_update+'</td>'
+                            +'<td><a nohref="nohref" class="details" id="page_'+item.id+'">Подробнее</a></td>'
+                            +'<td><a nohref="nohref" class="delete" id="delete_'+item.id+'">Удалить</a></td>'
+                            +'</tr>');
+                    });
+                    $(".details").click(function(){
+                        showPage($(this).attr('id').split('_')[1]);
+                        $(".modal").fadeIn();
+                    });
+
+                    $(".delete").click(function(){
+                        deletePage($(this).attr('id').split('_')[1]);
+                    });
+
+                },
+                error: function (error) {
+                    if (error.status == 401)
+                        location.href = '/login.html';
+                }
+            }
+        );
+    }
+    $(document).ready(function() {
+        refreshTable();
+
+        $('#save_page_button').click(function() {
+            var data = {
+                head: $('#add_page_form').find('input[name="head"]').val(),
+                title: $('#add_page_form').find('input[name="title"]').val(),
+                body: $('#add_page_form').find('[name="body"]').val(),
+                ext_body: $('#add_page_form').find('[name="ext_body"]').val()
+            };
+            var type = 'POST';
+            if ($('#add_page_form').find('input[name="id"]').val() > 0) {
+                data['id'] = $('#add_page_form').find('input[name="id"]').val();
+                type = 'PUT';
+            }
+            $.ajax({
+                    url: '/api/PageController',
+                    headers: {"auth_token": localStorage.getItem("auth_token")},
+                    data:JSON.stringify(data),
+                    type: type,
+                    dataType: 'json',
+                    success: function (response) {
+                        alert('Успешно!');
+                        refreshTable();
+                    },
+                    error: function (error) {
+                        if (error.status == 401)
+                            location.href = '/login.html';
+                    }
+                }
+            );
+
+        });
+
+        $("#new_page_button").click(function(){
+            $('#add_page_form').find('input[name="id"]').val(null);
+            $(".modal").fadeIn();
+        });
+        $("#cancel_button").click(function(){
+            $(".modal").fadeOut();
+        });
+
+        $("#logout").click(function(){
+            localStorage.clear();
+            location.href = '/login.html';
+        });
+
+
+    });
+</script>
+
+
